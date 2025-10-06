@@ -10,17 +10,18 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Модель пользователей
 model User {
   id        Int      @id @default(autoincrement())
   username  String   @unique
   email     String   @unique
   password  String
-  role      UserRole @default(USER)
+  role      Role     @default(USER)
   avatar    String?
   createdAt DateTime @default(now()) @map("created_at")
 
-  // Relations
-  anime           Anime[]           @relation("CreatedBy")
+  // Связи
+  createdAnime    Anime[]           @relation("AnimeCreator")
   ratings         Rating[]
   comments        Comment[]
   commentLikes    CommentLike[]
@@ -30,6 +31,13 @@ model User {
   @@map("users")
 }
 
+// Перечисление ролей
+enum Role {
+  USER  @map("user")
+  ADMIN @map("admin")
+}
+
+// Модель аниме
 model Anime {
   id          Int      @id @default(autoincrement())
   title       String
@@ -42,8 +50,8 @@ model Anime {
   createdBy   Int?     @map("created_by")
   createdAt   DateTime @default(now()) @map("created_at")
 
-  // Relations
-  creator       User?             @relation("CreatedBy", fields: [createdBy], references: [id], onDelete: SetNull)
+  // Связи
+  creator       User?             @relation("AnimeCreator", fields: [createdBy], references: [id], onDelete: SetNull)
   ratings       Rating[]
   comments      Comment[]
   userStatuses  UserAnimeStatus[]
@@ -51,19 +59,20 @@ model Anime {
   @@map("anime")
 }
 
+// Модель оценок (детализированная система)
 model Rating {
   id               Int      @id @default(autoincrement())
   userId           Int      @map("user_id")
   animeId          Int      @map("anime_id")
-  storyRating      Int      @map("story_rating")
-  artRating        Int      @map("art_rating")
-  charactersRating Int      @map("characters_rating")
-  soundRating      Int      @map("sound_rating")
-  overallRating    Float?   @map("overall_rating")
+  storyRating      Int      @map("story_rating") // Сюжет (1-10)
+  artRating        Int      @map("art_rating") // Рисовка (1-10)
+  charactersRating Int      @map("characters_rating") // Персонажи (1-10)
+  soundRating      Int      @map("sound_rating") // Звук (1-10)
+  overallRating    Float    @map("overall_rating") // Вычисляемое поле
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
 
-  // Relations
+  // Связи
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   anime Anime @relation(fields: [animeId], references: [id], onDelete: Cascade)
 
@@ -71,6 +80,7 @@ model Rating {
   @@map("ratings")
 }
 
+// Модель комментариев
 model Comment {
   id        Int      @id @default(autoincrement())
   userId    Int      @map("user_id")
@@ -78,7 +88,7 @@ model Comment {
   comment   String
   createdAt DateTime @default(now()) @map("created_at")
 
-  // Relations
+  // Связи
   user  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   anime Anime         @relation(fields: [animeId], references: [id], onDelete: Cascade)
   likes CommentLike[]
@@ -86,6 +96,7 @@ model Comment {
   @@map("comments")
 }
 
+// Модель лайков комментариев
 model CommentLike {
   id        Int         @id @default(autoincrement())
   userId    Int         @map("user_id")
@@ -93,7 +104,7 @@ model CommentLike {
   likeType  LikeType    @map("like_type")
   createdAt DateTime    @default(now()) @map("created_at")
 
-  // Relations
+  // Связи
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
 
@@ -101,15 +112,22 @@ model CommentLike {
   @@map("comment_likes")
 }
 
-model UserAnimeStatus {
-  id        Int              @id @default(autoincrement())
-  userId    Int              @map("user_id")
-  animeId   Int              @map("anime_id")
-  status    WatchingStatus
-  createdAt DateTime         @default(now()) @map("created_at")
-  updatedAt DateTime         @updatedAt @map("updated_at")
+// Перечисление типов лайков
+enum LikeType {
+  LIKE    @map("like")
+  DISLIKE @map("dislike")
+}
 
-  // Relations
+// Модель статусов аниме пользователей
+model UserAnimeStatus {
+  id        Int         @id @default(autoincrement())
+  userId    Int         @map("user_id")
+  animeId   Int         @map("anime_id")
+  status    AnimeStatus
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("updated_at")
+
+  // Связи
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   anime Anime @relation(fields: [animeId], references: [id], onDelete: Cascade)
 
@@ -117,6 +135,15 @@ model UserAnimeStatus {
   @@map("user_anime_status")
 }
 
+// Перечисление статусов аниме
+enum AnimeStatus {
+  PLANNED   @map("planned")   // Запланировано
+  WATCHING  @map("watching")  // Смотрю
+  COMPLETED @map("completed") // Завершено
+  DROPPED   @map("dropped")   // Брошено
+}
+
+// Модель попыток входа и блокировок
 model LoginAttempt {
   id             Int       @id @default(autoincrement())
   username       String
@@ -126,30 +153,11 @@ model LoginAttempt {
   blockedUntil   DateTime? @map("blocked_until")
   blockLevel     Int       @default(0) @map("block_level")
   createdAt      DateTime  @default(now()) @map("created_at")
-  userId         Int?      @map("user_id")
 
-  // Relations
-  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  // Связи (опционально для отслеживания)
+  user User? @relation(fields: [username], references: [username])
 
   @@index([username])
   @@index([blockedUntil])
   @@map("login_attempts")
-}
-
-// Enums
-enum UserRole {
-  USER  @map("user")
-  ADMIN @map("admin")
-}
-
-enum LikeType {
-  LIKE    @map("like")
-  DISLIKE @map("dislike")
-}
-
-enum WatchingStatus {
-  PLANNED   @map("planned")
-  WATCHING  @map("watching")
-  COMPLETED @map("completed")
-  DROPPED   @map("dropped")
 }

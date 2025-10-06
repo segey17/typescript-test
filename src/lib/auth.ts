@@ -1,28 +1,13 @@
 import { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
+import { PrismaAdapter } from "@auth/prisma-adapter"
+import { PrismaClient } from "@prisma/client"
 import bcrypt from "bcryptjs"
 
-// Временная заглушка для базы данных (позже заменим на Prisma)
-const users = [
-  {
-    id: "1",
-    username: "admin",
-    email: "admin@anime.com",
-    password: "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi", // password
-    role: "admin",
-    avatar: null,
-  },
-  {
-    id: "2",
-    username: "otaku_master",
-    email: "otaku@anime.com",
-    password: "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi", // password
-    role: "user",
-    avatar: null,
-  }
-]
+const prisma = new PrismaClient()
 
 export const authOptions: NextAuthOptions = {
+  adapter: PrismaAdapter(prisma) as any,
   providers: [
     CredentialsProvider({
       name: "credentials",
@@ -35,13 +20,21 @@ export const authOptions: NextAuthOptions = {
           return null
         }
 
-        const user = users.find(u => u.username === credentials.username)
+        // Ищем пользователя в базе данных
+        const user = await prisma.user.findFirst({
+          where: {
+            OR: [
+              { username: credentials.username },
+              { email: credentials.username }
+            ]
+          }
+        })
 
         if (!user) {
           return null
         }
 
-        // Временная проверка пароля (в PHP используется password, здесь тоже)
+        // Проверяем пароль
         const isValidPassword = await bcrypt.compare(credentials.password, user.password)
 
         if (!isValidPassword) {
@@ -49,7 +42,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         return {
-          id: user.id,
+          id: user.id.toString(),
           email: user.email,
           name: user.username,
           role: user.role,

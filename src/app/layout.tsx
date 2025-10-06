@@ -4,6 +4,7 @@ import "./globals.css";
 import ClientBody from "./ClientBody";
 import Script from "next/script";
 import { Providers } from "@/components/providers";
+import { Header } from "@/components/header";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,6 +36,7 @@ export default function RootLayout({
       </head>
       <body suppressHydrationWarning className="antialiased">
         <Providers>
+          <Header />
           <ClientBody>{children}</ClientBody>
         </Providers>
       </body>

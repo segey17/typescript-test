@@ -40,11 +40,26 @@ export default function SignUpPage() {
     }
 
     try {
-      // TODO: Пока что просто показываем сообщение об успехе
-      // В будущем здесь будет реальная регистрация через API
-      await new Promise(resolve => setTimeout(resolve, 1000)) // Имитация запроса
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username,
+          email,
+          password,
+        }),
+      })
 
-      setSuccess("Регистрация успешна! Теперь вы можете войти в систему.")
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || 'Произошла ошибка при регистрации')
+        return
+      }
+
+      setSuccess(data.message || "Регистрация успешна! Теперь вы можете войти в систему.")
 
       // Через 2 секунды перенаправляем на страницу входа
       setTimeout(() => {
@@ -52,6 +67,7 @@ export default function SignUpPage() {
       }, 2000)
 
     } catch (error) {
+      console.error('Ошибка регистрации:', error)
       setError("Произошла ошибка при регистрации")
     } finally {
       setIsLoading(false)
@@ -120,6 +136,7 @@ export default function SignUpPage() {
                 disabled={isLoading}
                 minLength={6}
               />
+              <p className="text-xs text-muted-foreground mt-1">Пароль должен быть не короче 6 символов</p>
             </div>
 
             <div className="space-y-2">
@@ -164,10 +181,7 @@ export default function SignUpPage() {
             </Link>
           </div>
 
-          {/* Временное сообщение о том, что это демо */}
-          <div className="mt-6 p-3 bg-yellow-50 dark:bg-yellow-950 rounded-lg text-xs text-muted-foreground">
-            <strong>Примечание:</strong> Это демо-версия. Фактическая регистрация будет реализована на следующих этапах с подключением базы данных.
-          </div>
+
         </CardContent>
       </Card>
     </div>

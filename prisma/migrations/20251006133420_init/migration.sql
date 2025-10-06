@@ -33,7 +33,7 @@ CREATE TABLE "ratings" (
     "art_rating" INTEGER NOT NULL,
     "characters_rating" INTEGER NOT NULL,
     "sound_rating" INTEGER NOT NULL,
-    "overall_rating" REAL,
+    "overall_rating" REAL NOT NULL,
     "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" DATETIME NOT NULL,
     CONSTRAINT "ratings_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
@@ -84,8 +84,7 @@ CREATE TABLE "login_attempts" (
     "blocked_until" DATETIME,
     "block_level" INTEGER NOT NULL DEFAULT 0,
     "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "user_id" INTEGER,
-    CONSTRAINT "login_attempts_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+    CONSTRAINT "login_attempts_username_fkey" FOREIGN KEY ("username") REFERENCES "users" ("username") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
 -- CreateIndex

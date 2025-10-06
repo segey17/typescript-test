@@ -22,6 +22,12 @@ const eslintConfig = [
       "react/no-unescaped-entities": "off",
       "@next/next/no-img-element": "off",
       "jsx-a11y/alt-text": "off",
+      // Разрешаем использование any в серверных маршрутах для упрощения маппинга
+      "@typescript-eslint/no-explicit-any": "off",
+      // Разрешаем пустые интерфейсы в некоторых местах
+      "@typescript-eslint/no-empty-object-type": "off",
+      // В клиентских компонентах допускаем упрощенное управление зависимостями
+      "react-hooks/exhaustive-deps": "warn",
     },
   },
 ];
